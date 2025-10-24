@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Alarm Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1439 50%, #0f172a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .status-indicator.disconnected {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* Price Display */
+        .price-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .price-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .price-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+        }
+
+        .price-value {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .price-arrow {
+            font-size: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .price-arrow.up {
+            color: #10b981;
+        }
+
+        .price-arrow.down {
+            color: #ef4444;
+        }
+
+        .price-change {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .price-change.positive {
+            color: #10b981;
+        }
+
+        .price-change.negative {
+            color: #ef4444;
+        }
+
+        /* Statistics Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        #priceChart {
+            width: 100%;
+            height: 250px;
+            border-radius: 8px;
+        }
+
+        /* Alert Creation */
+        .alert-creation {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .form-select {
+            cursor: pointer;
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: #ffffff;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-test {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-test:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Alerts List */
+        .alerts-list {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .alert-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .alert-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .alert-item.triggered {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            animation: alertPulse 1s ease-in-out;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        }
+
+        .alert-info {
+            flex: 1;
+        }
+
+        .alert-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .alert-details {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .alert-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .alert-status.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .alert-status.triggered {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* Volume Control */
+        .volume-control {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .volume-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Notification Modal */
+        .notification-modal {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            max-width: 400px;
+            animation: slideIn 0.3s ease;
+            display: none;
+        }
+
+        .notification-modal.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .notification-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .notification-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .price-value {
+                font-size: 36px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .notification-modal {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .ringtone-test {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🔔 Bitcoin Alarm Dashboard</div>
+            <div class="connection-status">
+                <span class="status-indicator disconnected" id="statusIndicator"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Price Display -->
+            <div class="price-card">
+                <div class="price-label">Current Bitcoin Price</div>
+                <div class="price-value">
+                    <span id="currentPrice">$0.00</span>
+                    <span class="price-arrow" id="priceArrow">→</span>
+                </div>
+                <div class="price-change" id="priceChange">--</div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">24h High</div>
+                    <div class="stat-value" id="high24h">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">24h Low</div>
+                    <div class="stat-value" id="low24h">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">24h Change</div>
+                    <div class="stat-value" id="change24h">0.00%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Last Update</div>
+                    <div class="stat-value" id="lastUpdate">--:--:--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="chart-section">
+            <div class="chart-title">📈 Real-time Price Chart (Last 20 Updates)</div>
+            <canvas id="priceChart"></canvas>
+        </div>
+
+        <!-- Alert Creation and List -->
+        <div class="main-grid">
+            <!-- Alert Creation Form -->
+            <div class="alert-creation">
+                <div class="section-title">Create New Alert</div>
+                <form id="alertForm">
+                    <div class="form-group">
+                        <label class="form-label">Alert Name</label>
+                        <input type="text" class="form-input" id="alertName" placeholder="e.g., Bitcoin Below 95k" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Alert Type</label>
+                        <select class="form-select" id="alertType" required>
+                            <option value="above">Price Above</option>
+                            <option value="below">Price Below</option>
+                            <option value="change_up">Price Change Up</option>
+                            <option value="change_down">Price Change Down</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="targetPriceGroup">
+                        <label class="form-label">Target Price ($)</label>
+                        <input type="number" class="form-input" id="targetPrice" placeholder="e.g., 95000" step="0.01">
+                    </div>
+                    <div class="form-group" id="changeAmountGroup" style="display: none;">
+                        <label class="form-label">Change Amount ($)</label>
+                        <input type="number" class="form-input" id="changeAmount" placeholder="e.g., 100" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ringtone</label>
+                        <select class="form-select" id="ringtone" required>
+                            <option value="bell">Bell</option>
+                            <option value="chime">Chime</option>
+                            <option value="alert">Alert</option>
+                            <option value="success">Success</option>
+                            <option value="warning">Warning</option>
+                        </select>
+                        <div class="ringtone-test">
+                            <span style="font-size: 12px; color: rgba(255, 255, 255, 0.6);">Test current ringtone</span>
+                            <button type="button" class="btn-test" id="testRingtone">▶ Test</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">+ Create Alert</button>
+                </form>
+
+                <!-- Volume Control -->
+                <div class="volume-control">
+                    <div class="volume-label">
+                        <span>🔊 Volume</span>
+                        <span id="volumeValue">70%</span>
+                    </div>
+                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="settings-panel">
+                <div class="section-title">⚙️ Settings</div>
+                <div class="settings-row">
+                    <div class="settings-label">Active Alerts</div>
+                    <div style="font-weight: 600; color: #3b82f6;" id="alertCount">0</div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Auto Reconnect</div>
+                    <div style="color: #10b981;">✓ Enabled</div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Alert Cooldown</div>
+                    <div>60 seconds</div>
+                </div>
+                <div class="settings-row">
+                    <button class="btn btn-secondary" id="clearAllAlerts" style="width: 100%;">Clear All Alerts</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts List -->
+        <div class="alerts-list">
+            <div class="section-title">Active Alerts</div>
+            <div id="alertsList">
+                <div class="empty-state">
+                    <div class="empty-icon">🔕</div>
+                    <div>No alerts created yet. Create your first alert above!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="notification-modal" id="notificationModal">
+        <div class="notification-title">
+            <span>🔔</span>
+            <span id="notificationTitle">Alert Triggered!</span>
+        </div>
+        <div class="notification-message" id="notificationMessage"></div>
+        <button class="notification-close" onclick="closeNotification()">Dismiss</button>
+    </div>
+
+    <script>
+        // Global State
+        let ws = null;
+        let currentPrice = 0;
+        let previousPrice = 0;
+        let priceHistory = [];
+        let alerts = [];
+        let stats = {
+            high24h: 0,
+            low24h: Infinity,
+            startPrice: 0,
+            lastUpdate: null
+        };
+        let volume = 70;
+        let triggeredAlerts = new Set();
+        let referencePrice = 0;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 3000;
+
+        // Chart Setup
+        const canvas = document.getElementById('priceChart');
+        const ctx = canvas.getContext('2d');
+        let chartWidth, chartHeight;
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.offsetWidth;
+            canvas.height = 250;
+            chartWidth = canvas.width;
+            chartHeight = canvas.height;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            drawChart();
+        });
+
+        // WebSocket Connection
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+
+                ws.onopen = () => {
+                    console.log('Connected to Binance WebSocket');
+                    updateConnectionStatus(true);
+                    reconnectAttempts = 0;
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    handlePriceUpdate(parseFloat(data.p));
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateConnectionStatus(false);
+                };
+
+                ws.onclose = () => {
+                    console.log('WebSocket closed');
+                    updateConnectionStatus(false);
+                    attemptReconnect();
+                };
+            } catch (error) {
+                console.error('Failed to connect:', error);
+                updateConnectionStatus(false);
+                attemptReconnect();
+            }
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
+                setTimeout(connectWebSocket, reconnectDelay);
+            } else {
+                document.getElementById('statusText').textContent = 'Connection Failed';
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                indicator.className = 'status-indicator connected';
+                statusText.textContent = 'Connected';
+            } else {
+                indicator.className = 'status-indicator disconnected';
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        // Price Update Handler
+        function handlePriceUpdate(price) {
+            previousPrice = currentPrice || price;
+            currentPrice = price;
+
+            // Update reference price for change alerts
+            if (referencePrice === 0) {
+                referencePrice = price;
+            }
+
+            // Update statistics
+            if (stats.startPrice === 0) {
+                stats.startPrice = price;
+            }
+            stats.high24h = Math.max(stats.high24h, price);
+            stats.low24h = Math.min(stats.low24h, price);
+            stats.lastUpdate = new Date();
+
+            // Update price history for chart
+            priceHistory.push(price);
+            if (priceHistory.length > 20) {
+                priceHistory.shift();
+            }
+
+            // Update UI
+            updatePriceDisplay();
+            updateStatsDisplay();
+            drawChart();
+
+            // Check alerts
+            checkAlerts();
+        }
+
+        function updatePriceDisplay() {
+            const priceElement = document.getElementById('currentPrice');
+            const arrowElement = document.getElementById('priceArrow');
+            const changeElement = document.getElementById('priceChange');
+
+            priceElement.textContent = `$${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            // Update arrow
+            if (currentPrice > previousPrice) {
+                arrowElement.textContent = '↑';
+                arrowElement.className = 'price-arrow up';
+            } else if (currentPrice < previousPrice) {
+                arrowElement.textContent = '↓';
+                arrowElement.className = 'price-arrow down';
+            } else {
+                arrowElement.textContent = '→';
+                arrowElement.className = 'price-arrow';
+            }
+
+            // Calculate 24h change
+            if (stats.startPrice > 0) {
+                const change = ((currentPrice - stats.startPrice) / stats.startPrice) * 100;
+                changeElement.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}% (24h)`;
+                changeElement.className = change >= 0 ? 'price-change positive' : 'price-change negative';
+            }
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('high24h').textContent = `$${stats.high24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('low24h').textContent = stats.low24h === Infinity ? '$0.00' : `$${stats.low24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            
+            if (stats.startPrice > 0) {
+                const change = ((currentPrice - stats.startPrice) / stats.startPrice) * 100;
+                document.getElementById('change24h').textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+            }
+
+            if (stats.lastUpdate) {
+                document.getElementById('lastUpdate').textContent = stats.lastUpdate.toLocaleTimeString();
+            }
+        }
+
+        // Chart Drawing
+        function drawChart() {
+            if (priceHistory.length === 0) return;
+
+            ctx.clearRect(0, 0, chartWidth, chartHeight);
+
+            const padding = 40;
+            const plotWidth = chartWidth - padding * 2;
+            const plotHeight = chartHeight - padding * 2;
+
+            // Find min and max for scaling
+            const minPrice = Math.min(...priceHistory);
+            const maxPrice = Math.max(...priceHistory);
+            const priceRange = maxPrice - minPrice || 1;
+
+            // Draw grid lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (plotHeight / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(chartWidth - padding, y);
+                ctx.stroke();
+            }
+
+            // Draw price line
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            priceHistory.forEach((price, index) => {
+                const x = padding + (plotWidth / (priceHistory.length - 1 || 1)) * index;
+                const y = padding + plotHeight - ((price - minPrice) / priceRange) * plotHeight;
+
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+
+            // Draw gradient fill
+            const gradient = ctx.createLinearGradient(0, padding, 0, chartHeight - padding);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+            ctx.fillStyle = gradient;
+            ctx.lineTo(chartWidth - padding, chartHeight - padding);
+            ctx.lineTo(padding, chartHeight - padding);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            
+            // Y-axis labels
+            for (let i = 0; i <= 4; i++) {
+                const price = maxPrice - (priceRange / 4) * i;
+                const y = padding + (plotHeight / 4) * i;
+                ctx.fillText(`$${price.toFixed(0)}`, padding - 10, y + 4);
+            }
+        }
+
+        // Alert Management
+        document.getElementById('alertForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            createAlert();
+        });
+
+        document.getElementById('alertType').addEventListener('change', (e) => {
+            const type = e.target.value;
+            const targetPriceGroup = document.getElementById('targetPriceGroup');
+            const changeAmountGroup = document.getElementById('changeAmountGroup');
+
+            if (type === 'above' || type === 'below') {
+                targetPriceGroup.style.display = 'block';
+                changeAmountGroup.style.display = 'none';
+                document.getElementById('targetPrice').required = true;
+                document.getElementById('changeAmount').required = false;
+            } else {
+                targetPriceGroup.style.display = 'none';
+                changeAmountGroup.style.display = 'block';
+                document.getElementById('targetPrice').required = false;
+                document.getElementById('changeAmount').required = true;
+            }
+        });
+
+        function createAlert() {
+            const name = document.getElementById('alertName').value;
+            const type = document.getElementById('alertType').value;
+            const targetPrice = parseFloat(document.getElementById('targetPrice').value) || 0;
+            const changeAmount = parseFloat(document.getElementById('changeAmount').value) || 0;
+            const ringtone = document.getElementById('ringtone').value;
+
+            const alert = {
+                id: Date.now(),
+                name,
+                type,
+                targetPrice,
+                changeAmount,
+                ringtone,
+                status: 'active',
+                createdAt: new Date(),
+                referencePrice: currentPrice
+            };
+
+            alerts.push(alert);
+            renderAlerts();
+            document.getElementById('alertForm').reset();
+            updateAlertCount();
+        }
+
+        function deleteAlert(id) {
+            alerts = alerts.filter(alert => alert.id !== id);
+            triggeredAlerts.delete(id);
+            renderAlerts();
+            updateAlertCount();
+        }
+
+        function renderAlerts() {
+            const alertsList = document.getElementById('alertsList');
+            
+            if (alerts.length === 0) {
+                alertsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔕</div>
+                        <div>No alerts created yet. Create your first alert above!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            alertsList.innerHTML = alerts.map(alert => {
+                const typeLabel = {
+                    'above': 'Price Above',
+                    'below': 'Price Below',
+                    'change_up': 'Price Change Up',
+                    'change_down': 'Price Change Down'
+                }[alert.type];
+
+                const value = alert.type === 'above' || alert.type === 'below' 
+                    ? `$${alert.targetPrice.toLocaleString()}` 
+                    : `$${alert.changeAmount.toLocaleString()}`;
+
+                const isTriggered = triggeredAlerts.has(alert.id);
+
+                return `
+                    <div class="alert-item ${isTriggered ? 'triggered' : ''}">
+                        <div class="alert-info">
+                            <div class="alert-name">${alert.name}</div>
+                            <div class="alert-details">
+                                <span>📊 ${typeLabel}</span>
+                                <span>💰 ${value}</span>
+                                <span>🔔 ${alert.ringtone}</span>
+                            </div>
+                        </div>
+                        <div class="alert-actions">
+                            <span class="alert-status ${isTriggered ? 'triggered' : 'active'}">
+                                ${isTriggered ? '✓ Triggered' : 'Active'}
+                            </span>
+                            <button class="btn-danger" onclick="deleteAlert(${alert.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateAlertCount() {
+            document.getElementById('alertCount').textContent = alerts.length;
+        }
+
+        function checkAlerts() {
+            alerts.forEach(alert => {
+                // Skip if already triggered and in cooldown
+                if (triggeredAlerts.has(alert.id)) {
+                    return;
+                }
+
+                let shouldTrigger = false;
+
+                switch (alert.type) {
+                    case 'above':
+                        shouldTrigger = currentPrice > alert.targetPrice;
+                        break;
+                    case 'below':
+                        shouldTrigger = currentPrice < alert.targetPrice;
+                        break;
+                    case 'change_up':
+                        shouldTrigger = (currentPrice - alert.referencePrice) >= alert.changeAmount;
+                        break;
+                    case 'change_down':
+                        shouldTrigger = (alert.referencePrice - currentPrice) >= alert.changeAmount;
+                        break;
+                }
+
+                if (shouldTrigger) {
+                    triggerAlert(alert);
+                }
+            });
+        }
+
+        function triggerAlert(alert) {
+            // Mark as triggered
+            triggeredAlerts.add(alert.id);
+            
+            // Play ringtone
+            playRingtone(alert.ringtone);
+            
+            // Show notification
+            showNotification(alert);
+            
+            // Update UI
+            renderAlerts();
+
+            // Set cooldown (60 seconds)
+            setTimeout(() => {
+                triggeredAlerts.delete(alert.id);
+                renderAlerts();
+            }, 60000);
+
+            // Request browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Bitcoin Alert Triggered!', {
+                    body: `${alert.name}: Current price $${currentPrice.toFixed(2)}`,
+                    icon: '🔔'
+                });
+            }
+        }
+
+        function showNotification(alert) {
+            const modal = document.getElementById('notificationModal');
+            const title = document.getElementById('notificationTitle');
+            const message = document.getElementById('notificationMessage');
+
+            title.textContent = `Alert: ${alert.name}`;
+            
+            const typeLabel = {
+                'above': 'Price went above',
+                'below': 'Price went below',
+                'change_up': 'Price increased by',
+                'change_down': 'Price decreased by'
+            }[alert.type];
+
+            const value = alert.type === 'above' || alert.type === 'below' 
+                ? `$${alert.targetPrice.toLocaleString()}` 
+                : `$${alert.changeAmount.toLocaleString()}`;
+
+            message.innerHTML = `
+                <strong>${typeLabel} ${value}</strong><br>
+                Current price: $${currentPrice.toFixed(2)}<br>
+                Time: ${new Date().toLocaleTimeString()}
+            `;
+
+            modal.classList.add('show');
+
+            // Auto-dismiss after 10 seconds
+            setTimeout(() => {
+                modal.classList.remove('show');
+            }, 10000);
+        }
+
+        function closeNotification() {
+            document.getElementById('notificationModal').classList.remove('show');
+        }
+
+        // Audio System (Web Audio API)
+        function playRingtone(type) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            const ringtones = {
+                bell: { frequency: 440, waveform: 'sine', duration: 0.5, repeat: 1 },
+                chime: { frequency: 523, waveform: 'triangle', duration: 0.8, repeat: 1 },
+                alert: { frequency: 880, waveform: 'square', duration: 0.3, repeat: 3 },
+                success: { frequency: 349, frequencyEnd: 523, waveform: 'sine', duration: 0.6, repeat: 1 },
+                warning: { frequency: 220, waveform: 'sawtooth', duration: 1.0, repeat: 1 }
+            };
+
+            const config = ringtones[type] || ringtones.bell;
+            playSound(audioContext, config, 0);
+        }
+
+        function playSound(audioContext, config, repeatCount) {
+            if (repeatCount >= (config.repeat || 1)) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = config.waveform;
+            oscillator.frequency.setValueAtTime(config.frequency, audioContext.currentTime);
+
+            // For success tone (ascending)
+            if (config.frequencyEnd) {
+                oscillator.frequency.linearRampToValueAtTime(
+                    config.frequencyEnd,
+                    audioContext.currentTime + config.duration
+                );
+            }
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            gainNode.gain.setValueAtTime(volume / 100, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + config.duration);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + config.duration);
+
+            // Repeat if needed
+            if (repeatCount + 1 < (config.repeat || 1)) {
+                setTimeout(() => {
+                    playSound(audioContext, config, repeatCount + 1);
+                }, config.duration * 1000 + 100);
+            }
+        }
+
+        // Volume Control
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            volume = parseInt(e.target.value);
+            document.getElementById('volumeValue').textContent = `${volume}%`;
+        });
+
+        // Test Ringtone
+        document.getElementById('testRingtone').addEventListener('click', () => {
+            const selectedRingtone = document.getElementById('ringtone').value;
+            playRingtone(selectedRingtone);
+        });
+
+        // Clear All Alerts
+        document.getElementById('clearAllAlerts').addEventListener('click', () => {
+            if (alerts.length === 0) return;
+            
+            if (confirm('Are you sure you want to clear all alerts?')) {
+                alerts = [];
+                triggeredAlerts.clear();
+                renderAlerts();
+                updateAlertCount();
+            }
+        });
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Initialize
+        connectWebSocket();
+        renderAlerts();
+        updateAlertCount();
+
+        console.log('Bitcoin Alarm Dashboard initialized');
+    </script>
+</body>
+</html>
